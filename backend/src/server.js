@@ -10,9 +10,12 @@ import hardwareRoutes from "./routes/hardwareRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import alertRoutes from "./routes/alertRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import usersRoutes from "./routes/usersRoutes.js";
 dotenv.config();
 
 const app=express();
+app.use(cors());
 app.use(express.json());
 const MONGOURL='mongodb://localhost:27017/';
 const PORT=5000;
@@ -24,6 +27,8 @@ app.use("/api/hardware", hardwareRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/alerts", alertRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 //const MONGOURL=;
 mongoose
 .connect(MONGOURL)

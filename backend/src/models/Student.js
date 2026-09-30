@@ -20,7 +20,7 @@ const studentSchema= new mongoose.Schema({
     status:{
         type:String,
         enum:["ACTIVE","INACTIVE"],
-        default:["INACTIVE"]
+        default:"INACTIVE"
     },
     created_at:{
         type:Date,
