@@ -101,11 +101,63 @@ Stores:
 
 ## 🛠️ Technologies Used
 
-*(Update according to your implementation)*
+- **Frontend:** React (Vite), React Router, Axios
+- **Backend:** Node.js, Express.js, Socket.IO (live dashboard updates)
+- **Database:** MongoDB (Mongoose ODM) - MongoDB Atlas in production, a local `mongod` for development
+- **Monitoring Agent:** calls the `/api/agent/*` REST endpoints from each lab PC (heartbeat, login/logout, activity, hardware scan)
+- **Other:** JWT auth + bcrypt (staff/student passwords), ExcelJS (spreadsheet import/export), Multer (file uploads), Helmet + rate limiting
 
-- Frontend:
-- Backend:
-- Database:
-- Monitoring Agent:
-- APIs:
-- Deployment:
+---
+
+## 🚀 Getting Started
+
+### 1. Backend
+
+```bash
+cd backend
+npm install
+cp .env.example .env        # then fill in MONGO_URI, JWT_SECRET, AGENT_API_KEY
+npm run seed:fresh          # creates demo labs, students, staff accounts, an exam, etc.
+npm run dev                 # http://localhost:5000 (or PORT from .env)
+```
+
+Demo sign-ins created by the seed script:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@vau.ac.lk | Admin@12345 |
+| Lecturer | lecturer@vau.ac.lk | Lecturer@12345 |
+| Examiner | examiner@vau.ac.lk | Examiner@12345 |
+
+Students sign in at the lab PC (not the dashboard) with their registration number (e.g. `2021ict128`) and the password `Student@123`.
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local  # VITE_API_BASE_URL=/api is fine for local dev
+npm run dev                 # http://localhost:5173
+```
+
+The Vite dev server proxies `/api` to the backend (`http://localhost:5050` by default - see `vite.config.js`), so no CORS setup is needed locally.
+
+### 3. Project structure
+
+```
+backend/
+  src/
+    models/        Mongoose schemas (Student, Computer, LoginSession, HardwareDevice, ExamSession, ...)
+    controllers/    request handlers per feature area
+    services/       misuse-flagging rules, hardware-scan diffing, exam auto-assignment, Excel import/export
+    routes/         Express routers, mounted under /api
+    middleware/     JWT auth, monitoring-agent key auth, error handling, uploads
+    realtime/       Socket.IO event emitter
+    seed/           demo data generator
+frontend/
+  src/
+    api/            one file per resource, thin wrappers over axios
+    pages/          one page per feature area
+    components/     shared layout, table, modal, badge, chart pieces
+    context/        auth context (JWT storage + current user)
+```
