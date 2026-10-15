@@ -45,11 +45,17 @@ def scan_devices(wmi_conn):
     add(wmi_conn.Win32_PointingDevice(), "Mouse", "Name")
     add(wmi_conn.Win32_DesktopMonitor(), "Monitor", "Name")
     add(wmi_conn.Win32_DiskDrive(), "Disk", "Model")
-    # USB devices (flash drives, USB mouse/keyboard, webcams ...) - skip hubs/controllers
-    for item in wmi_conn.Win32_PnPEntity():
+    # USB devices (flash drives, USB mouse/keyboard, webcams ...) - skip hubs/controllers.
+    # The WHERE clause makes WMI return only USB entities instead of all 100+ PnP devices,
+    # which keeps the agent's CPU usage low.
+    usb_query = (
+        "SELECT PNPDeviceID, Caption FROM Win32_PnPEntity "
+        r"WHERE PNPDeviceID LIKE 'USB\\VID_%'"
+    )
+    for item in wmi_conn.query(usb_query):
         key = getattr(item, "PNPDeviceID", None) or ""
         caption = getattr(item, "Caption", None) or ""
-        if key.startswith("USB\\VID_") and "hub" not in caption.lower() and key not in found:
+        if key and "hub" not in caption.lower() and key not in found:
             found[key] = ("USB", caption or key)
     return found
 

@@ -9,7 +9,8 @@ if (!process.env.MONGO_URI) {
   process.exit(1);
 }
 if (!process.env.AGENT_KEY) {
-  console.warn('WARNING: AGENT_KEY is not set - anyone can POST alerts. Set it in Backend/.env');
+  console.error('AGENT_KEY is missing. Set it in Backend/.env (must equal "agent_key" in client-agent/config.json).');
+  process.exit(1);
 }
 
 mongoose

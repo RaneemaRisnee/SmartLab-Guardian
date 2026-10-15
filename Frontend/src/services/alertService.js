@@ -22,3 +22,12 @@ export const resolveAlert = (alertId, status = 'Reviewed', adminId = null) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status, admin_id: adminId }),
   });
+
+// Live updates (Server-Sent Events). onChange() is called whenever the server
+// reports a new or resolved alert. EventSource reconnects automatically.
+export const openAlertStream = (onChange) => {
+  const source = new EventSource(`${BASE_URL}/stream`);
+  source.addEventListener('alert-created', onChange);
+  source.addEventListener('alert-resolved', onChange);
+  return source;
+};

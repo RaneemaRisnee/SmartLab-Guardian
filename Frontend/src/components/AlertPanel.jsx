@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { fetchAlerts, resolveAlert } from '../services/alertService';
+import { fetchAlerts, resolveAlert, openAlertStream } from '../services/alertService';
 import '../App.css';
 
-const REFRESH_MS = 3000;
+const FALLBACK_REFRESH_MS = 30000; // safety-net refresh; live updates arrive instantly via SSE
 
 export default function AlertPanel({ adminId = null }) {
   const [alerts, setAlerts] = useState([]);
@@ -29,9 +29,13 @@ export default function AlertPanel({ adminId = null }) {
     };
 
     load();
-    const timer = setInterval(load, REFRESH_MS);
+    // Server pushes an event only when an alert is created/resolved -> reload then.
+    const stream = openAlertStream(load);
+    // Slow fallback in case the stream is blocked by a proxy or drops silently.
+    const timer = setInterval(load, FALLBACK_REFRESH_MS);
     return () => {
       active = false;
+      stream.close();
       clearInterval(timer);
     };
   }, [refreshKey]);
@@ -61,7 +65,7 @@ export default function AlertPanel({ adminId = null }) {
           )}
         </div>
 
-        {error && <div className="error-banner">⚠ {error} (retrying every {REFRESH_MS / 1000}s)</div>}
+        {error && <div className="error-banner">⚠ {error} (retrying automatically)</div>}
 
         <div className="table-wrap">
           <table className="alert-table">

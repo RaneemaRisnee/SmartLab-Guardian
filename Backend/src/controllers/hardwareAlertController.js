@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const HardwareRemovalAlert = require('../models/HardwareRemovalAlert');
+const alertEvents = require('../utils/alertEvents');
 
 const VALID_STATUSES = ['Pending', 'Reviewed', 'Dismissed'];
 
@@ -28,12 +29,16 @@ exports.createAlert = async (req, res) => {
       // status is always Pending on creation; the client cannot choose it
     });
 
+    alertEvents.broadcast('alert-created', { id: alert._id });
     res.status(201).json({ message: 'Alert created successfully', alert });
   } catch (err) {
     console.error('[createAlert]', err.message);
     res.status(500).json({ error: err.message });
   }
 };
+
+// GET /api/alerts/stream        (Server-Sent Events: dashboard is notified instantly)
+exports.streamAlerts = (req, res) => alertEvents.addClient(req, res);
 
 // GET /api/alerts/all            (?status=Pending | Reviewed | Dismissed)
 exports.getAllAlerts = async (req, res) => {
@@ -73,6 +78,7 @@ exports.resolveAlert = async (req, res) => {
     );
     if (!updated) return res.status(404).json({ error: 'Alert not found' });
 
+    alertEvents.broadcast('alert-resolved', { id: updated._id });
     res.status(200).json(updated);
   } catch (err) {
     console.error('[resolveAlert]', err.message);
