@@ -1,6 +1,0 @@
-{
-  "pc_id": "LAB-01-PC-12",
-  "api_url": "http://localhost:5000/api/alerts/log-alert",
-  "agent_key": "change-this-secret",
-  "interval_seconds": 5
-}
