@@ -1,51 +1,48 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
-const hardwareDeviceSchema = new mongoose.Schema({
-    computer_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Computer",
-        required: true
+/**
+ * A single piece of lab equipment. Devices attached to a PC are matched by
+ * `serialNumber` against what the agent reports during a hardware scan.
+ */
+const hardwareDeviceSchema = new mongoose.Schema(
+  {
+    hardwareId: {
+      type: String,
+      required: [true, 'Hardware ID is required'],
+      unique: true,
+      uppercase: true,
+      trim: true
     },
-
-    device_type: {
-        type: String,
-        required: true
+    computer: { type: mongoose.Schema.Types.ObjectId, ref: 'Computer', index: true },
+    lab: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', index: true },
+    deviceType: {
+      type: String,
+      enum: ['keyboard', 'mouse', 'monitor', 'system-unit', 'storage', 'headset', 'webcam', 'ups', 'other'],
+      required: true,
+      index: true
     },
-
-    hardware_identifier: String,
-
-    device_name: String,
-
-    manufacturer: String,
-
-    model: String,
-
-    device_condition: {
-        type: String,
-        enum: [
-            "GOOD",
-            "DAMAGED",
-            "NEEDS_REPAIR"
-        ],
-        default: "GOOD"
+    vendor: { type: String, trim: true },
+    model: { type: String, trim: true },
+    serialNumber: { type: String, trim: true, index: true },
+    condition: {
+      type: String,
+      enum: ['new', 'good', 'fair', 'damaged'],
+      default: 'good'
     },
-
     status: {
-        type: String,
-        enum: [
-            "CONNECTED",
-            "REMOVED",
-            "MISSING"
-        ],
-        default: "CONNECTED"
+      type: String,
+      enum: ['connected', 'disconnected', 'missing', 'in-store', 'retired'],
+      default: 'in-store',
+      index: true
     },
+    location: { type: String, trim: true },
+    purchaseDate: { type: Date },
+    lastSeenAt: { type: Date },
+    notes: { type: String, trim: true }
+  },
+  { timestamps: true }
+);
 
-    registered_at: {
-        type: Date,
-        default: Date.now
-    }
-});
+hardwareDeviceSchema.index({ computer: 1, deviceType: 1 });
 
-const HardwareDevice = mongoose.model("HardwareDevice",hardwareDeviceSchema);
-
-export default HardwareDevice;
+module.exports = mongoose.model('HardwareDevice', hardwareDeviceSchema);

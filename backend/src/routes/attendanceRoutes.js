@@ -1,14 +1,13 @@
-import express from "express";
-
-import {
-    getSessionAttendance,
-    markAttendance
-} from "../controllers/attendanceController.js";
+const express = require('express');
+const controller = require('../controllers/attendanceController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get("/session/:sessionId", getSessionAttendance);
+router.use(protect);
 
-router.post("/", markAttendance);
+router.get('/', controller.list);
+router.get('/summary', controller.summary);
+router.put('/:id', authorize('admin', 'lecturer'), controller.override);
 
-export default router;
+module.exports = router;

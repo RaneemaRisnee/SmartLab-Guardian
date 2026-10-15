@@ -1,128 +1,127 @@
-import Computer from "../models/Computer.js";
+const { Computer, HardwareDevice, Lab, LoginSession } = require('../models');
+const ApiError = require('../utils/ApiError');
+const asyncHandler = require('../utils/asyncHandler');
+const { getPagination, paginatedResponse } = require('../utils/pagination');
+const { parseSheet, mapComputerRows } = require('../services/excelService');
 
+/** GET /api/computers - filterable list with the student currently signed in. */
+exports.list = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query, { defaultLimit: 50 });
+  const filter = {};
 
-// Get all computers
-export const getComputers = async (req, res) => {
-    try {
-        const computers = await Computer.find()
-            .populate("lab_id", "lab_name");
+  if (req.query.lab) filter.lab = req.query.lab;
+  if (req.query.status) filter.status = req.query.status;
+  if (req.query.search) {
+    const rx = new RegExp(String(req.query.search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    filter.$or = [{ pcNumber: rx }, { hostname: rx }, { ipAddress: rx }];
+  }
 
-        res.status(200).json(computers);
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to get computers",
-            error: error.message
-        });
+  const [items, total] = await Promise.all([
+    Computer.find(filter).populate('lab', 'code name').sort({ pcNumber: 1 }).skip(skip).limit(limit),
+    Computer.countDocuments(filter)
+  ]);
+
+  const activeSessions = await LoginSession.find({
+    computer: { $in: items.map((c) => c._id) },
+    status: 'active'
+  }).populate('student', 'regNo name');
+
+  const occupant = new Map(
+    activeSessions.map((s) => [s.computer.toString(), s.student])
+  );
+
+  res.json({
+    success: true,
+    data: paginatedResponse(
+      items.map((c) => ({ ...c.toJSON(), currentStudent: occupant.get(c._id.toString()) || null })),
+      total,
+      { page, limit }
+    )
+  });
+});
+
+/** GET /api/computers/:id - one PC with its attached hardware. */
+exports.getOne = asyncHandler(async (req, res) => {
+  const computer = await Computer.findById(req.params.id).populate('lab', 'code name location');
+  if (!computer) throw ApiError.notFound('Computer not found');
+
+  const [hardware, recentSessions] = await Promise.all([
+    HardwareDevice.find({ computer: computer._id }).sort({ deviceType: 1 }),
+    LoginSession.find({ computer: computer._id })
+      .sort({ loginTime: -1 })
+      .limit(10)
+      .populate('student', 'regNo name')
+  ]);
+
+  res.json({ success: true, data: { computer, hardware, recentSessions } });
+});
+
+/** POST /api/computers */
+exports.create = asyncHandler(async (req, res) => {
+  const lab = await Lab.findById(req.body.lab);
+  if (!lab) throw ApiError.badRequest('Select a valid lab for this computer');
+
+  const computer = await Computer.create(req.body);
+  res.status(201).json({ success: true, data: computer });
+});
+
+/** PUT /api/computers/:id */
+exports.update = asyncHandler(async (req, res) => {
+  const computer = await Computer.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true
+  }).populate('lab', 'code name');
+  if (!computer) throw ApiError.notFound('Computer not found');
+  res.json({ success: true, data: computer });
+});
+
+/** DELETE /api/computers/:id - refused while a student is still signed in. */
+exports.remove = asyncHandler(async (req, res) => {
+  const computer = await Computer.findById(req.params.id);
+  if (!computer) throw ApiError.notFound('Computer not found');
+
+  const active = await LoginSession.countDocuments({ computer: computer._id, status: 'active' });
+  if (active > 0) {
+    throw ApiError.conflict('A student is currently signed in on this computer');
+  }
+
+  await HardwareDevice.updateMany(
+    { computer: computer._id },
+    { $set: { computer: null, status: 'in-store' } }
+  );
+  await computer.deleteOne();
+
+  res.json({ success: true, message: 'Computer deleted and its hardware returned to store' });
+});
+
+/** POST /api/computers/import?lab=<id> - bulk register a lab from a spreadsheet. */
+exports.importFromExcel = asyncHandler(async (req, res) => {
+  if (!req.file) throw ApiError.badRequest('Upload an .xlsx, .xls or .csv file in the "file" field');
+
+  const labId = req.body.lab || req.query.lab;
+  const lab = await Lab.findById(labId);
+  if (!lab) throw ApiError.badRequest('Provide the lab these computers belong to');
+
+  const rows = await parseSheet(req.file.buffer, req.file.originalname);
+  const { valid, errors } = mapComputerRows(rows);
+
+  let created = 0;
+  let updated = 0;
+
+  for (const row of valid) {
+    const existing = await Computer.findOne({ pcNumber: row.pcNumber });
+    if (existing) {
+      Object.assign(existing, row, { lab: lab._id });
+      await existing.save();
+      updated += 1;
+    } else {
+      await Computer.create({ ...row, lab: lab._id });
+      created += 1;
     }
-};
+  }
 
-
-// Get one computer
-export const getComputerById = async (req, res) => {
-    try {
-        const computer = await Computer.findById(req.params.id)
-            .populate("lab_id", "lab_name");
-
-        if (!computer) {
-            return res.status(404).json({
-                message: "Computer not found"
-            });
-        }
-
-        res.status(200).json(computer);
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to get computer",
-            error: error.message
-        });
-    }
-};
-
-
-// Create computer
-export const createComputer = async (req, res) => {
-    try {
-        const computer = await Computer.create(req.body);
-
-        res.status(201).json({
-            message: "Computer created successfully",
-            computer
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: "Failed to create computer",
-            error: error.message
-        });
-    }
-};
-
-
-// Update computer
-export const updateComputer = async (req, res) => {
-    try {
-        const computer = await Computer.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        if (!computer) {
-            return res.status(404).json({
-                message: "Computer not found"
-            });
-        }
-
-        res.status(200).json({
-            message: "Computer updated successfully",
-            computer
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: "Failed to update computer",
-            error: error.message
-        });
-    }
-};
-
-
-// Delete computer
-export const deleteComputer = async (req, res) => {
-    try {
-        const computer = await Computer.findByIdAndDelete(req.params.id);
-
-        if (!computer) {
-            return res.status(404).json({
-                message: "Computer not found"
-            });
-        }
-
-        res.status(200).json({
-            message: "Computer deleted successfully"
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to delete computer",
-            error: error.message
-        });
-    }
-};
-
-
-// Get available computers
-export const getAvailableComputers = async (req, res) => {
-    try {
-        const computers = await Computer.find({
-            status: "AVAILABLE"
-        });
-
-        res.status(200).json(computers);
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to get available computers",
-            error: error.message
-        });
-    }
-};
+  res.json({
+    success: true,
+    data: { totalRows: rows.length, created, updated, skipped: errors.length, errors }
+  });
+});

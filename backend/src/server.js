@@ -1,51 +1,66 @@
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
+require('dotenv').config();
 
-import studentRoutes from "./routes/studentRoutes.js";
-import labRoutes from "./routes/labRoutes.js";
-import computerRoutes from "./routes/computerRoutes.js";
-import hardwareRoutes from "./routes/hardwareRoutes.js";
-import sessionRoutes from "./routes/sessionRoutes.js";
-import attendanceRoutes from "./routes/attendanceRoutes.js";
-import alertRoutes from "./routes/alertRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import usersRoutes from "./routes/usersRoutes.js";
-dotenv.config();
+const http = require('http');
+const app = require('./app');
+const connectDB = require('./config/db');
+const { initRealtime } = require('./realtime/io');
+const { markStaleComputersOffline } = require('./services/hardwareService');
+const { MonitoringPolicy } = require('./models');
 
-const app=express();
-app.use(cors());
-app.use(express.json());
-const MONGOURL='mongodb://localhost:27017/';
-const PORT=5000;
+const PORT = process.env.PORT || 5000;
 
-app.use("/api/students", studentRoutes);
-app.use("/api/labs", labRoutes);
-app.use("/api/computers", computerRoutes);
-app.use("/api/hardware", hardwareRoutes);
-app.use("/api/sessions", sessionRoutes);
-app.use("/api/attendance", attendanceRoutes);
-app.use("/api/alerts", alertRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
-//const MONGOURL=;
-mongoose
-.connect(MONGOURL)
-.then(()=>{
-    console.log("Data base connected successfully");
-    app.listen(PORT,()=>{
-        console.log(`Server running on port ${PORT}`);
+/**
+ * Background sweep that marks PCs offline once their agent stops reporting.
+ * The interval is taken from the global policy so admins can tune it without
+ * a restart.
+ */
+function startHeartbeatSweep() {
+  const sweep = async () => {
+    try {
+      const policy = await MonitoringPolicy.resolveFor(null);
+      const count = await markStaleComputersOffline(policy.heartbeatTimeoutMinutes);
+      if (count > 0) {
+        console.log(`Heartbeat sweep: marked ${count} computer(s) offline`);
+      }
+    } catch (err) {
+      console.error('Heartbeat sweep failed:', err.message);
+    }
+  };
 
+  sweep();
+  return setInterval(sweep, 60 * 1000);
+}
+
+async function start() {
+  try {
+    await connectDB();
+
+    const server = http.createServer(app);
+    const origins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+      .split(',')
+      .map((o) => o.trim());
+
+    initRealtime(server, origins);
+    const sweepTimer = startHeartbeatSweep();
+
+    server.listen(PORT, () => {
+      console.log(`SmartLab Guardian API running on http://localhost:${PORT} (${process.env.NODE_ENV || 'development'})`);
     });
-}).catch((err)=>{console.error("Database connection failed:",err.message);
+
+    const shutdown = (signal) => {
+      console.log(`\n${signal} received, shutting down.`);
+      clearInterval(sweepTimer);
+      server.close(() => process.exit(0));
+      // Do not hang forever if a connection refuses to close.
+      setTimeout(() => process.exit(1), 10000).unref();
+    };
+
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+  } catch (err) {
+    console.error('Failed to start server:', err.message);
     process.exit(1);
-});
+  }
+}
 
-app.get("/",(req,res)=>{
-    res.json({
-        success:true,
-        message:"SmartLab GUardian api is running",
-    });
-});
-
+start();

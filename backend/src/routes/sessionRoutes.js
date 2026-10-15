@@ -1,20 +1,17 @@
-import express from "express";
-
-import {
-    getSessions,
-    createSession,
-    startSession,
-    endSession
-} from "../controllers/sessionController.js";
+const express = require('express');
+const controller = require('../controllers/sessionController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get("/", getSessions);
+router.use(protect);
 
-router.post("/", createSession);
+router.get('/', controller.list);
+router.get('/live', controller.live);
+router.get('/:id', controller.getOne);
 
-router.put("/:id/start", startSession);
+router.post('/', authorize('admin', 'examiner', 'lecturer'), controller.create);
+router.put('/:id/end', authorize('admin', 'examiner', 'lecturer'), controller.end);
+router.put('/:id/review', authorize('admin', 'lecturer'), controller.review);
 
-router.put("/:id/end", endSession);
-
-export default router;
+module.exports = router;

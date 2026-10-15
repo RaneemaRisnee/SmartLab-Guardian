@@ -1,20 +1,13 @@
-import express from "express";
-
-import {
-    getAlerts,
-    getOpenAlerts,
-    createAlert,
-    resolveAlert
-} from "../controllers/alertController.js";
+const express = require('express');
+const controller = require('../controllers/alertController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get("/", getAlerts);
+router.use(protect);
 
-router.get("/open", getOpenAlerts);
+router.get('/', controller.list);
+router.get('/summary', controller.summary);
+router.put('/:id', authorize('admin'), controller.updateStatus);
 
-router.post("/", createAlert);
-
-router.put("/:id/resolve", resolveAlert);
-
-export default router;
+module.exports = router;

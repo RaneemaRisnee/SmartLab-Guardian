@@ -1,23 +1,16 @@
-import express from "express";
-
-import {
-    getLabs,
-    getLabById,
-    createLab,
-    updateLab,
-    deleteLab
-} from "../controllers/labController.js";
+const express = require('express');
+const controller = require('../controllers/labController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get("/", getLabs);
+router.use(protect);
 
-router.get("/:id", getLabById);
+router.get('/', controller.list);
+router.get('/:id', controller.getOne);
 
-router.post("/", createLab);
+router.post('/', authorize('admin'), controller.create);
+router.put('/:id', authorize('admin'), controller.update);
+router.delete('/:id', authorize('admin'), controller.remove);
 
-router.put("/:id", updateLab);
-
-router.delete("/:id", deleteLab);
-
-export default router;
+module.exports = router;

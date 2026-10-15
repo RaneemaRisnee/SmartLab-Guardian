@@ -1,72 +1,116 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import DashboardLayout from './layouts/DashboardLayout';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import SessionsPage from './pages/SessionsPage';
+import SessionDetailPage from './pages/SessionDetailPage';
+import AttendancePage from './pages/AttendancePage';
+import HardwarePage from './pages/HardwarePage';
+import AlertsPage from './pages/AlertsPage';
+import StudentsPage from './pages/StudentsPage';
+import LabsPage from './pages/LabsPage';
+import ExamsPage from './pages/ExamsPage';
+import ExamDetailPage from './pages/ExamDetailPage';
+import ReportsPage from './pages/ReportsPage';
+import PoliciesPage from './pages/PoliciesPage';
+import AccountPage from './pages/AccountPage';
+import UsersPage from './pages/UsersPage';
+import NotFoundPage from './pages/NotFoundPage';
 
-import Login from './pages/Login';
-import AdminDashboard from './pages/admin/DashboardHome';
-import AdminComputers from './pages/admin/Computers';
-import AdminStudents from './pages/admin/Students';
-import AdminUsers from './pages/admin/Users';
-import LecturerDashboard from './pages/lecturer/DashboardHome';
-import ExaminerDashboard from './pages/examiner/DashboardHome';
-import StudentDashboard from './pages/student/DashboardHome';
-
-function App() {
+export default function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route path="/" element={<Navigate to="/login" replace />} />
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
-              <DashboardLayout />
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="sessions" element={<SessionsPage />} />
+        <Route path="sessions/:id" element={<SessionDetailPage />} />
+        <Route
+          path="attendance"
+          element={
+            <ProtectedRoute roles={['admin', 'lecturer']}>
+              <AttendancePage />
             </ProtectedRoute>
-          }>
-            <Route index element={<AdminDashboard />} />
-            <Route path="computers" element={<AdminComputers />} />
-            <Route path="students" element={<AdminStudents />} />
-            <Route path="users" element={<AdminUsers />} />
-            {/* Add more admin routes here */}
-          </Route>
+          }
+        />
+        <Route
+          path="hardware"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <HardwarePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="alerts"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <AlertsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="students"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <StudentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="labs"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <LabsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="exams"
+          element={
+            <ProtectedRoute roles={['admin', 'examiner']}>
+              <ExamsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="exams/:id"
+          element={
+            <ProtectedRoute roles={['admin', 'examiner']}>
+              <ExamDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="account" element={<AccountPage />} />
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="policies"
+          element={
+            <ProtectedRoute roles={['admin', 'lecturer']}>
+              <PoliciesPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
 
-          {/* Lecturer Routes */}
-          <Route path="/lecturer" element={
-            <ProtectedRoute allowedRoles={['LECTURER']}>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<LecturerDashboard />} />
-            {/* Add more lecturer routes here */}
-          </Route>
-
-          {/* Examiner Routes */}
-          <Route path="/examiner" element={
-            <ProtectedRoute allowedRoles={['EXAMINER']}>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<ExaminerDashboard />} />
-            {/* Add more examiner routes here */}
-          </Route>
-
-          {/* Student Routes */}
-          <Route path="/student" element={
-            <ProtectedRoute allowedRoles={['STUDENT']}>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<StudentDashboard />} />
-            {/* Add more student routes here */}
-          </Route>
-        </Routes>
-      </AuthProvider>
-    </Router>
+      <Route path="/404" element={<NotFoundPage />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
+    </Routes>
   );
 }
-
-export default App;

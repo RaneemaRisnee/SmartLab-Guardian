@@ -1,20 +1,17 @@
-import express from "express";
-
-import {
-    getHardware,
-    getComputerHardware,
-    createHardware,
-    updateHardware
-} from "../controllers/hardwareController.js";
+const express = require('express');
+const controller = require('../controllers/hardwareController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get("/", getHardware);
+router.use(protect);
 
-router.get("/computer/:computerId", getComputerHardware);
+router.get('/', controller.list);
+router.get('/summary', controller.summary);
+router.get('/:id', controller.getOne);
 
-router.post("/", createHardware);
+router.post('/', authorize('admin'), controller.create);
+router.put('/:id', authorize('admin'), controller.update);
+router.delete('/:id', authorize('admin'), controller.remove);
 
-router.put("/:id", updateHardware);
-
-export default router;
+module.exports = router;

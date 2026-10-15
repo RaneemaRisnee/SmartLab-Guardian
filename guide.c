@@ -1,3 +1,13 @@
+
+Role	Email	Password
+Admin	admin@vau.ac.lk	Admin@12345
+Lecturer	lecturer@vau.ac.lk	Lecturer@12345
+Examiner	examiner@vau.ac.lk	Examiner@12345
+
+
+
+
+
 # SmartLab Guardian — Getting Started Guide
 ### How to Actually Build Your Module, Step by Step
 

@@ -1,29 +1,29 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
-const applicationUsageSchema = new mongoose.Schema({
-    login_session_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "LoginSession",
-        required: true
+/** One stretch of foreground time in a single application, reported by the agent. */
+const applicationUsageSchema = new mongoose.Schema(
+  {
+    session: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'LoginSession',
+      required: true,
+      index: true
     },
-
-    application_name: {
-        type: String,
-        required: true
+    appName: { type: String, required: true, trim: true, index: true },
+    windowTitle: { type: String, trim: true },
+    category: {
+      type: String,
+      enum: ['productivity', 'development', 'browser', 'media', 'game', 'system', 'other'],
+      default: 'other'
     },
+    startTime: { type: Date, required: true },
+    endTime: { type: Date },
+    durationSeconds: { type: Number, default: 0, min: 0 },
+    blocked: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
 
-    start_time: {
-        type: Date,
-        required: true
-    },
+applicationUsageSchema.index({ session: 1, appName: 1 });
 
-    end_time: Date,
-
-    duration_seconds: {
-        type: Number,
-        default: 0
-    }
-});
-
-const ApplicationUsage=mongoose.model("ApplicationUsage",applicationUsageSchema);
-export default ApplicationUsage;
+module.exports = mongoose.model('ApplicationUsage', applicationUsageSchema);

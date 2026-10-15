@@ -1,23 +1,18 @@
-import express from "express";
-
-import {
-    getStudents,
-    getStudentById,
-    createStudent,
-    updateStudent,
-    deleteStudent
-} from "../controllers/studentController.js";
+const express = require('express');
+const controller = require('../controllers/studentController');
+const { protect, authorize } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-router.get("/", getStudents);
+router.use(protect);
 
-router.get("/:id", getStudentById);
+router.get('/', controller.list);
+router.get('/:id', controller.getOne);
 
-router.post("/", createStudent);
+router.post('/', authorize('admin'), controller.create);
+router.post('/import', authorize('admin'), upload.single('file'), controller.importFromExcel);
+router.put('/:id', authorize('admin'), controller.update);
+router.delete('/:id', authorize('admin'), controller.remove);
 
-router.put("/:id", updateStudent);
-
-router.delete("/:id", deleteStudent);
-
-export default router;
+module.exports = router;

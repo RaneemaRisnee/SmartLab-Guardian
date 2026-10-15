@@ -1,26 +1,18 @@
-import express from "express";
-
-import {
-    getComputers,
-    getComputerById,
-    createComputer,
-    updateComputer,
-    deleteComputer,
-    getAvailableComputers
-} from "../controllers/computerController.js";
+const express = require('express');
+const controller = require('../controllers/computerController');
+const { protect, authorize } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-router.get("/", getComputers);
+router.use(protect);
 
-router.get("/available", getAvailableComputers);
+router.get('/', controller.list);
+router.get('/:id', controller.getOne);
 
-router.get("/:id", getComputerById);
+router.post('/', authorize('admin'), controller.create);
+router.post('/import', authorize('admin'), upload.single('file'), controller.importFromExcel);
+router.put('/:id', authorize('admin'), controller.update);
+router.delete('/:id', authorize('admin'), controller.remove);
 
-router.post("/", createComputer);
-
-router.put("/:id", updateComputer);
-
-router.delete("/:id", deleteComputer);
-
-export default router;
+module.exports = router;

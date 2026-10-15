@@ -1,41 +1,48 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
-const computerSchema = new mongoose.Schema({
-    lab_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Lab",
-        required: true
+/**
+ * A lab PC. `lastHeartbeatAt` is refreshed by the monitoring agent, and the
+ * dashboard treats a PC with a stale heartbeat as offline.
+ */
+const computerSchema = new mongoose.Schema(
+  {
+    pcNumber: {
+      type: String,
+      required: [true, 'PC number is required'],
+      unique: true,
+      uppercase: true,
+      trim: true
     },
-
-    pc_number: {
-        type: String,
-        required: true
-    },
-
-    hostname: String,
-
-    ip_address: String,
-
-    mac_address: String,
-
+    lab: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', required: true, index: true },
+    hostname: { type: String, trim: true },
+    ipAddress: { type: String, trim: true },
+    macAddress: { type: String, trim: true, uppercase: true },
     status: {
-        type: String,
-        enum: [
-            "AVAILABLE",
-            "IN_USE",
-            "OFFLINE",
-            "MAINTENANCE"
-        ],
-        default: "AVAILABLE"
+      type: String,
+      enum: ['available', 'in-use', 'offline', 'maintenance'],
+      default: 'offline',
+      index: true
     },
+    specs: {
+      cpu: { type: String, trim: true },
+      ramGb: { type: Number, min: 0 },
+      storageGb: { type: Number, min: 0 },
+      os: { type: String, trim: true }
+    },
+    agentVersion: { type: String, trim: true },
+    lastHeartbeatAt: { type: Date },
+    notes: { type: String, trim: true }
+  },
+  { timestamps: true }
+);
 
-    last_seen: Date,
-
-    created_at: {
-        type: Date,
-        default: Date.now
-    }
+/** Minutes since the agent last checked in, or null if it never has. */
+computerSchema.virtual('minutesSinceHeartbeat').get(function minutesSince() {
+  if (!this.lastHeartbeatAt) return null;
+  return Math.round((Date.now() - this.lastHeartbeatAt.getTime()) / 60000);
 });
 
-const Computer=mongoose.model("Computer",computerSchema);
-export default Computer;
+computerSchema.set('toJSON', { virtuals: true });
+computerSchema.set('toObject', { virtuals: true });
+
+module.exports = mongoose.model('Computer', computerSchema);
