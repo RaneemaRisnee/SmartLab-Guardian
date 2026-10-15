@@ -1,0 +1,3 @@
+wmi
+pypiwin32
+requests
