@@ -5,6 +5,7 @@ const {
   HardwareDevice,
   HardwareRemovalAlert,
   LoginSession,
+  MonitoringSession,
   UsageReport
 } = require('../models');
 const ApiError = require('../utils/ApiError');
@@ -23,12 +24,19 @@ function scopeMatch(query, dateField = 'loginTime') {
   return match;
 }
 
+async function getMonitoringSession(query) {
+  if (!query.monitoringSession || !mongoose.isValidObjectId(query.monitoringSession)) return null;
+  return MonitoringSession.findById(query.monitoringSession).lean();
+}
+
 /**
  * GET /api/reports/usage
  * Per-session usage with the top applications, plus lab-level totals.
  */
 exports.usage = asyncHandler(async (req, res) => {
   const match = scopeMatch(req.query);
+  const monitoringSession = await getMonitoringSession(req.query);
+  if (monitoringSession) match.monitoringSession = monitoringSession._id;
 
   const sessions = await LoginSession.find(match)
     .populate('student', 'regNo name')
@@ -100,6 +108,12 @@ exports.usage = asyncHandler(async (req, res) => {
 /** GET /api/reports/attendance */
 exports.attendance = asyncHandler(async (req, res) => {
   const match = scopeMatch(req.query, 'date');
+  const monitoringSession = await getMonitoringSession(req.query);
+  if (monitoringSession) {
+    match.session = {
+      $in: await LoginSession.find({ monitoringSession: monitoringSession._id }).distinct('_id')
+    };
+  }
 
   const records = await AttendanceRecord.find(match)
     .populate('student', 'regNo name batch')
@@ -149,6 +163,15 @@ exports.hardware = asyncHandler(async (req, res) => {
   const alertMatch = { ...deviceMatch };
   const range = buildDateRange(req.query.from, req.query.to);
   if (range) alertMatch.removalTime = range;
+  const monitoringSession = await getMonitoringSession(req.query);
+  if (monitoringSession) {
+    deviceMatch.lab = monitoringSession.lab;
+    alertMatch.lab = monitoringSession.lab;
+    alertMatch.removalTime = {
+      $gte: monitoringSession.startedAt,
+      $lte: monitoringSession.endedAt || new Date()
+    };
+  }
 
   const [devices, alerts] = await Promise.all([
     HardwareDevice.find(deviceMatch)

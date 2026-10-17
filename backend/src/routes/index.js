@@ -8,6 +8,7 @@ router.use('/students', require('./studentRoutes'));
 router.use('/labs', require('./labRoutes'));
 router.use('/computers', require('./computerRoutes'));
 router.use('/sessions', require('./sessionRoutes'));
+router.use('/monitoring-sessions', require('./monitoringSessionRoutes'));
 router.use('/attendance', require('./attendanceRoutes'));
 router.use('/hardware', require('./hardwareRoutes'));
 router.use('/alerts', require('./alertRoutes'));

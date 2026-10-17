@@ -9,6 +9,7 @@ module.exports = {
   HardwareRemovalAlert: require('./HardwareRemovalAlert'),
   Lab: require('./Lab'),
   LoginSession: require('./LoginSession'),
+  MonitoringSession: require('./MonitoringSession'),
   MonitoringPolicy: require('./MonitoringPolicy'),
   Student: require('./Student'),
   UsageReport: require('./UsageReport'),

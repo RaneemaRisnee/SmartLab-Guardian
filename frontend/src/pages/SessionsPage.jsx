@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listSessions, endSession } from '../api/sessions';
 import { listLabs } from '../api/labs';
+import { finishMonitoringSession, listMonitoringSessions, startMonitoringSession } from '../api/monitoringSessions';
 import { useAsync } from '../hooks/useAsync';
 import PageHeader from '../components/PageHeader';
 import Badge from '../components/Badge';
@@ -19,8 +20,12 @@ export default function SessionsPage() {
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [lab, setLab] = useState('');
   const [actionError, setActionError] = useState('');
+  const [startOpen, setStartOpen] = useState(false);
+  const [monitoringBusy, setMonitoringBusy] = useState(false);
+  const [monitoringLab, setMonitoringLab] = useState('');
 
   const { data: labs } = useAsync(listLabs, []);
+  const { data: monitoringSessions, reload: reloadMonitoringSessions } = useAsync(listMonitoringSessions, []);
 
   const { data, loading, error, reload } = useAsync(
     () =>
@@ -36,6 +41,38 @@ export default function SessionsPage() {
 
   const canManage = ['admin', 'lecturer', 'examiner'].includes(user?.role);
 
+  const handleStartMonitoring = async () => {
+    if (!monitoringLab) {
+      setActionError('Select a lab to start monitoring.');
+      return;
+    }
+    setMonitoringBusy(true);
+    setActionError('');
+    try {
+      await startMonitoringSession({ lab: monitoringLab });
+      setMonitoringLab('');
+      reloadMonitoringSessions();
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setMonitoringBusy(false);
+    }
+  };
+
+  const handleFinishMonitoring = async (id) => {
+    if (!window.confirm('Finish this monitoring session? Student and computer data already received from agents will remain available in Reports.')) return;
+    setMonitoringBusy(true);
+    setActionError('');
+    try {
+      await finishMonitoringSession(id);
+      reloadMonitoringSessions();
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setMonitoringBusy(false);
+    }
+  };
+
   const handleEnd = async (id) => {
     setActionError('');
     try {
@@ -48,7 +85,18 @@ export default function SessionsPage() {
 
   return (
     <>
-      <PageHeader title="Live &amp; Session History" />
+      <PageHeader
+        title="Live &amp; Session History"
+        actions={canManage && <div className="btn-row">
+          <select value={monitoringLab} onChange={(e) => setMonitoringLab(e.target.value)} aria-label="Monitoring lab">
+            <option value="">Select lab</option>
+            {labs?.map((item) => <option key={item._id} value={item._id}>{item.code}</option>)}
+          </select>
+          <button className="btn btn-sm btn-primary" disabled={monitoringBusy || !monitoringLab} onClick={handleStartMonitoring}>
+            {monitoringBusy ? 'Starting…' : 'Start monitoring'}
+          </button>
+        </div>}
+      />
       <div className="page-content">
         <div className="toolbar">
           <div className="field">
@@ -103,6 +151,18 @@ export default function SessionsPage() {
         </div>
 
         <AlertBanner>{error || actionError}</AlertBanner>
+        {!!monitoringSessions?.filter((item) => item.status === 'active').length && (
+          <div className="card card-pad" style={{ marginBottom: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Active monitoring sessions</h3>
+            {monitoringSessions.filter((item) => item.status === 'active').map((item) => (
+              <div key={item._id} className="btn-row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+                <span><strong>{item.lab?.code}</strong> started {formatDateTime(item.startedAt)} by {item.startedBy?.name}</span>
+                {canManage && <button className="btn btn-sm btn-danger" disabled={monitoringBusy} onClick={() => handleFinishMonitoring(item._id)}>Finish session</button>}
+              </div>
+            ))}
+            <p className="text-sm text-muted" style={{ marginBottom: 0 }}>Student names and PC assignments will appear automatically when the monitoring agents report them.</p>
+          </div>
+        )}
 
         <div className="card">
           {loading && !data ? (

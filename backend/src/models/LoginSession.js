@@ -9,6 +9,7 @@ const loginSessionSchema = new mongoose.Schema(
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true, index: true },
     computer: { type: mongoose.Schema.Types.ObjectId, ref: 'Computer', required: true, index: true },
     lab: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', required: true, index: true },
+    monitoringSession: { type: mongoose.Schema.Types.ObjectId, ref: 'MonitoringSession', index: true },
     sessionType: { type: String, enum: ['lab', 'exam'], default: 'lab' },
     examSession: { type: mongoose.Schema.Types.ObjectId, ref: 'ExamSession' },
     loginTime: { type: Date, default: Date.now, index: true },

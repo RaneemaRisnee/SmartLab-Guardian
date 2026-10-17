@@ -4,6 +4,7 @@ const {
   Computer,
   ExamAssignment,
   LoginSession,
+  MonitoringSession,
   MonitoringPolicy,
   WebsiteActivity
 } = require('../models');
@@ -19,10 +20,14 @@ const { evaluateSession } = require('./flaggingService');
  * the misuse is recorded rather than hidden by closing the old one.
  */
 async function startSession({ student, computer, sessionType = 'lab', examSession = null }) {
+  const monitoringSession = await MonitoringSession.findOne({ lab: computer.lab, status: 'active' })
+    .sort({ startedAt: -1 })
+    .select('_id');
   const session = await LoginSession.create({
     student: student._id,
     computer: computer._id,
     lab: computer.lab,
+    monitoringSession: monitoringSession?._id,
     sessionType,
     examSession,
     loginTime: new Date(),
