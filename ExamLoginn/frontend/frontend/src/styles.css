@@ -1,0 +1,49 @@
+:root{
+    --bg:#eef1ef;
+    --panel:#fff;
+    --ink:#17211f;
+    --mut:#62706c;
+    --line:#d3dbd8;
+    --acc:#0e6b5c;
+    --sel:#d8efe9;
+    --asg:#fdeccb;
+    --asgl:#c98a1b
+}
+
+* {
+    box-sizing:border-box
+}
+
+body {
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font:15px/1.5 system-ui,"Segoe UI",sans-serif
+}
+
+header {
+    padding:20px 24px 4px;
+    max-width:1200px;
+    margin:auto
+}
+
+h1 {
+    margin:0;
+    font-size:22px
+}
+
+header p {
+    margin:2px 0 0;
+    color:var(--mut)
+}
+
+main {
+    display:grid;
+    grid-template-columns:320px 1fr;
+    gap:16px;
+    padding:16px 24px 32px;
+    max-width:1200px;
+    margin:auto
+}
+
+
