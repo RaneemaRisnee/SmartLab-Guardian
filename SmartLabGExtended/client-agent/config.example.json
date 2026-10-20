@@ -1,0 +1,10 @@
+{
+  "pc_id": "LAB-01-PC-12",
+  "api_url": "http://localhost:5000/api/alerts/log-alert",
+  "agent_key": "replace-with-the-same-secret-as-Backend-AGENT_KEY",
+  "interval_seconds": 300,
+  "monitoring_api_url": "http://localhost:5000/api/monitoring",
+  "inactivity_threshold_seconds": 300,
+  "monitor_poll_seconds": 1,
+  "usage_upload_interval_seconds": 60
+}

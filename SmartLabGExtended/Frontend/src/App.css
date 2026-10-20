@@ -1,0 +1,175 @@
+/* Dashboard layout & fonts */
+:root {
+  --primary-color: #1a237e;
+  --danger-color: #d32f2f;
+  --danger-bg: #ffebee;
+  --danger-border: #ef5350;
+  --success-color: #2e7d32;
+  --success-bg: #e8f5e9;
+  --card-bg: #ffffff;
+  --text-dark: #212121;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f9;
+  color: var(--text-dark);
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+/* Alert Box / Card */
+.alert-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 12px;
+}
+
+.alert-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--danger-color);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+/* Active Alert Badge (Pulse effect) */
+.badge-count {
+  background-color: var(--danger-color);
+  color: #fff;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  animation: pulse-danger 1.8s infinite;
+}
+
+/* Table Styling */
+.alert-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.alert-table th {
+  background-color: #eceff1;
+  color: #455a64;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.alert-table td {
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Pending Warning Row - Pulsating Red Animation */
+.row-pending {
+  background-color: var(--danger-bg);
+  border-left: 6px solid var(--danger-color);
+  animation: alert-blink 2s infinite ease-in-out;
+}
+
+.row-reviewed {
+  background-color: var(--card-bg);
+  border-left: 6px solid var(--success-color);
+}
+
+/* Status Pills */
+.status-pill {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.status-pill.pending {
+  background-color: #ffcdd2;
+  color: var(--danger-color);
+  border: 1px solid var(--danger-border);
+}
+
+.status-pill.reviewed {
+  background-color: var(--success-bg);
+  color: var(--success-color);
+}
+
+/* Action Buttons */
+.btn-resolve {
+  background-color: #1976d2;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-resolve:hover {
+  background-color: #1565c0;
+  transform: translateY(-1px);
+}
+
+.btn-resolve:active {
+  transform: translateY(0);
+}
+
+/* Keyframe Animations for Red Alert */
+@keyframes alert-blink {
+  0% {
+    background-color: #ffebee;
+  }
+  50% {
+    background-color: #ffcdd2;
+  }
+  100% {
+    background-color: #ffebee;
+  }
+}
+
+@keyframes pulse-danger {
+  0% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(211, 47, 47, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+  }
+}
+
+/* ---- layout / extras added during review ---- */
+.app-shell { min-height: 100vh; padding: 20px; }
+.app-header { margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+.app-header h1 { color: var(--primary-color); margin: 0; font-size: 2rem; }
+.app-header p { color: #555; margin: 5px 0 0 0; }
+.table-wrap { overflow-x: auto; }
+.empty-cell { text-align: center; color: #757575; padding: 30px; }
+.done-text { color: var(--success-color); font-weight: 600; }
+.error-banner { background: #fff3e0; border: 1px solid #ffb74d; color: #e65100; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; }
+.status-pill.dismissed { background-color: #eceff1; color: #546e7a; }
+.btn-dismiss { background-color: #eceff1; color: #455a64; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+.btn-dismiss:hover { background-color: #cfd8dc; }
