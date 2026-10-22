@@ -35,6 +35,131 @@ const api = async (url, method = "GET", body) => {
   return d;
 };
 
+function parseRows(rows) {
+  rows = rows.filter((r) => r.some((c) => String(c).trim()));
+  const head = (rows[0] || []).map((c) => String(c).toLowerCase());
+  const find = (re, d) => { const i = head.findIndex((c) => re.test(c)); return i < 0 ? d : i; };
+  let ix = { reg: 0, name: 1, user: 2, pass: 3 };
+  if (head.some((c) => /reg|name|user|pass/.test(c))) {
+    ix = { reg: find(/reg|index/, 0), name: find(/^(student\s*|full\s*)?name$/, 1), user: find(/user|login/, 2), pass: find(/pass/, 3) };
+    rows = rows.slice(1);
+  }
+  const get = (r, i) => String(r[i] ?? "").trim();
+  return rows
+    .map((r) => ({ regNo: get(r, ix.reg), name: get(r, ix.name), username: get(r, ix.user), password: get(r, ix.pass) }))
+    .filter((s) => s.regNo && s.name);
+}
+
+function ExamSetup({ user, logout }) {
+  const [pcs, setPcs] = useState([]);
+  const [sel, setSel] = useState(new Set());
+  const [students, setStudents] = useState([]);
+  const [asg, setAsg] = useState({});
+  const [shuf, setShuf] = useState(false);
+  const [paste, setPaste] = useState("");
+  const [f, setF] = useState({ name: "", date: new Date().toISOString().slice(0, 10), start: "09:00", end: "11:00" });
+  const [exams, setExams] = useState([]);
+  const [vid, setVid] = useState(null);
+  const [view, setView] = useState(null);
+  const [msg, setMsg] = useState("");
+
+  const loadExams = () => api("/exams?lab=" + LAB).then(setExams).catch((e) => setMsg(e.message));
+  const loadView = () => vid && api("/exams/" + vid).then(setView).catch((e) => setMsg(e.message));
+
+  useEffect(() => { // live status while an exam is open
+    loadView();
+    const t = setInterval(loadView, 4000);
+    return () => clearInterval(t);
+  }, [vid]);
+
+  const nums = pcs.map((p) => p.pcNumber);
+ 
+  const pick = (q) => {
+    setAsg({});
+    setSel(new Set(nums.filter((n) => q === "all" || (q === "odd" && n % 2) || (q === "even" && !(n % 2)))));
+  };
+
+   const random = () => {
+    setAsg({});
+    setSel(new Set(shuffle(nums).slice(0, students.length || Math.ceil(nums.length / 2))));
+  };
+  const toggle = (n) => {
+    const s = new Set(sel);
+    if (s.has(n)) { s.delete(n); const a = { ...asg }; delete a[n]; setAsg(a); } else s.add(n);
+    setSel(s);
+  };
+
+  const load = async (rows) => {
+    const s = parseRows(rows);
+    if (!s.length) return setMsg("0 students found. Use a header row like: Reg No | Name | Username | Password");
+    try {
+      const d = await api("/students/import", "POST", { students: s });
+      setStudents(s.map(({ regNo, name }) => ({ regNo, name })));
+      setAsg({});
+      setMsg(`${d.imported} students loaded, ${d.withLogin} with login details.`);
+    } catch (e) { setMsg(e.message); }
+  };
+
+  const onFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      await load(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" }));
+    } catch (err) { setMsg("Could not read the file: " + err.message); }
+    e.target.value = "";
+  };
+
+  
+  const assign = () => {
+    const p = [...sel].sort((a, b) => a - b);
+    if (!students.length || !p.length) return setMsg("Load students and select PCs first.");
+    if (students.length > p.length) return setMsg(`Select ${students.length - p.length} more PC(s).`);
+    const list = shuf ? shuffle(students) : students;
+    const a = {};
+    list.forEach((s, i) => (a[p[i]] = s));
+    setAsg(a);
+    setMsg("Assigned. Review the list, then save the exam.");
+  };
+
+
+  const save = async () => {
+    const assignments = Object.entries(asg).map(([pc, s]) => ({ pcNumber: +pc, regNo: s.regNo, name: s.name }));
+    if (!f.name || !assignments.length) return setMsg("Enter an exam name and assign students first.");
+    try {
+      const d = await api("/exams", "POST", { name: f.name, lab: LAB, examDate: f.date, startTime: f.start, endTime: f.end, assignments });
+      setMsg("Exam saved." + (d.missing.length ? ` No login details for: ${d.missing.join(", ")}` : ""));
+      loadExams();
+    } catch (e) { setMsg(e.message); }
+  };
+
+
+  const act = async (path, ok) => {
+    try {
+      const d = await api(path, "POST");
+      setMsg(ok(d));
+    } catch (e) { setMsg(e.message); }
+    loadExams(); loadView();
+  };
+
+
+  const start = (id) => {
+    if (!confirm("Start this exam? Lab PCs will RESTART and sign in their students.")) return;
+    setVid(id);
+    act(`/exams/${id}/start`, (d) => "Exam started. Lab PCs are signing in." + (d.missing.length ? ` No login details for: ${d.missing.join(", ")}` : ""));
+  };
+
+
+  const end = (id) => act(`/exams/${id}/end`, () => "Exam ended.");
+  const remove = async (id) => {
+    if (!confirm("Delete this exam and its assignments?")) return;
+    await api("/exams/" + id, "DELETE");
+    setVid(null); setView(null); loadExams();
+  };
+
+
+  const rows = Object.keys(asg).map(Number).sort((a, b) => a - b);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
 return (
     <>
@@ -141,6 +266,9 @@ return (
     </>
   );
 
+}
+
 export default function App() {
   return <ExamSetup user={{ username: "admin", role: "admin" }} logout={() => {}} />;
 }
+

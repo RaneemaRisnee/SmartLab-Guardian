@@ -47,3 +47,225 @@ main {
 }
 
 
+@media (
+    max-width:820px
+    )
+{main {
+    grid-template-columns:1fr;
+    padding:12px
+ }}
+section {
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px
+}
+
+.wide {
+    grid-column:1/-1
+}
+
+h2 {
+    font-size:15px;
+    margin:0 0 10px 
+}
+label {
+    display:block;
+    font-size:13px;
+    color:var(--mut);
+    margin:10px 0 3px
+}
+
+input,textarea {
+    width:100%;
+    font:inherit;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:7px 9px
+
+}
+
+textarea {
+    height:90px;
+    resize:vertical;
+    font-size:13px} .two {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:8px
+    }
+
+button {
+    font:inherit;
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--ink);
+    border-radius:6px;
+    padding:6px 11px
+}
+
+button:hover {
+    border-color:var(--acc)
+} 
+button:disabled {
+    opacity:.5;
+    cursor:not-allowed
+}
+
+button.pri {
+    background:var(--acc);
+    color:#fff;
+    border-color:var(--acc);
+    font-weight:600
+}
+
+:focus-visible {
+    outline:2px solid var(--acc);
+    outline-offset:2px
+}
+
+.row {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:8px 0
+} .chk {
+    display:flex;
+    gap:8px;
+    align-items:center;
+    color:var(--ink)} .chk input { 
+        width:auto
+    }
+.msg,.stat {
+    font-size:13px;
+    color:var(--mut);
+    margin:8px 0 0
+        }.msg{
+            color:var(--acc);
+            font-weight:600
+        }
+
+.front {
+    text-align:center;
+    font-size:12px;
+    color:var(--mut);
+    border-bottom:2px solid var(--line);
+    padding-bottom:6px;
+    margin:10px 0 12px
+}
+
+.grid {
+    display:grid;
+    grid-template-columns:repeat(8,minmax(64px,1fr));
+    gap:8px;
+    overflow-x:auto
+}
+
+.grid .pc:nth-child(8n+4) {
+    margin-right:18px
+}
+
+.pc { 
+    background:var(--bg);
+    border:1.5px solid var(--line);
+    min-height:58px;
+    padding:6px 4px;
+    text-align:center
+}
+
+.pc b {
+    display:block;
+    font:600 13px ui-monospace,Consolas,monospace
+        }.pc small {
+            display:block;
+            font-size:11px;
+            color:var(--mut);
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap
+        }
+
+.pc.sel {
+    background:var(--sel);
+    border-color:var(--acc)
+        }.pc.asg {
+            background:var(--asg);
+            border-color:var(--asgl)
+        }
+
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px
+    }  th,td {
+        text-align:left;
+        padding:6px 8px;
+        border-bottom:1px solid var(--line)
+    } th {
+        color:var(--mut)
+    }
+
+.exam {
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
+    padding:8px 0;
+    border-bottom:1px solid var(--line)
+}
+
+.top {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap
+    }.who {
+        font-size:13px;
+        color:var(--mut)
+    }
+
+.login {
+    max-width:340px;
+    margin:12vh auto;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:24px
+
+}
+
+.login h1 {
+    margin-bottom:2px
+        }.err {
+            color:#b3401f;
+            font-weight:600;
+            font-size:13px;
+            margin:8px 0 0
+        }
+
+.badge {
+    font-style:normal;
+    font-size:12px;
+    padding:2px 8px;
+    border-radius:10px;
+    background:var(--bg);
+    border:1px solid var(--line)
+}
+
+.badge.active,.badge.signed_in {
+    background:#d8efe9;
+    border-color:var(--acc)
+        }.badge.dispatched {
+            background:var(--asg);
+            border-color:var(--asgl)
+        }
+
+.badge.failed,.badge.no_login {
+    background:#f7d9d0;
+    border-color:#b3401f
+        }.badge.ended {
+            opacity:.6
+        }
