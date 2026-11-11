@@ -84,6 +84,14 @@ Stores:
 
 ---
 
+## 📦 Hardware Inventory Module
+
+The hardware inventory module provides a dashboard and API for registering, searching, filtering, updating, and managing laboratory equipment.
+
+See the [Hardware Inventory setup guide](../HardwareInventory/README.md) for requirements, local setup, and API details.
+
+---
+
 ## 👨‍💻 Project Group
 
 **Group - 05**
